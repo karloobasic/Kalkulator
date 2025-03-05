@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image" href="saturn.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bruno+Ace+SC&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+    <title>Kviz</title>
+    <style>
+        body {
+            font-family: "Ubuntu", Arial;
+            font-weight: 400;
+            font-style: normal;
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+            background: radial-gradient(circle, rgba(0, 0, 0, 0.7), rgba(26, 26, 26, 0.7), rgba(0, 0, 0, 0.7)), radial-gradient(ellipse at bottom, #244469 10%, #090a0f 100%);
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            opacity: 0;
+            animation: fadeInStars 2s ease-in-out forwards;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            font-size: 48px;
+            text-align: center;
+            animation: fadeIn 2s;
+        }
+
+        .question {
+            backdrop-filter: blur(8px) brightness(1.2);
+            background: rgba(51, 51, 51, 0.1);
+            border-radius: 30px;
+            padding: 30px;
+            width: 90%;
+            max-width: 800px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            border: 1px solid rgba(111, 111, 111, 0.2);
+            animation: fadeIn 0.5s ease-out;
+            display: none;
+            position: relative;
+            margin: 0 auto;
+        }
+
+        .question.active {
+            display: block;
+        }
+
+        .question p {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .question .question-number {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .answers {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .answer {
+            padding: 15px 25px;
+            border: 2px solid rgba(111, 111, 111, 0.3);
+            border-radius: 30px;
+            background-color: transparent;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .answer:hover {
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.675);
+        }
+
+        .answer.correct {
+            box-shadow: 0 0 15px rgba(50, 205, 50, 0.8);
+            border-color: rgba(50, 205, 50, 0.8);
+        }
+
+        .answer.incorrect {
+            box-shadow: 0 0 15px rgba(255, 69, 58, 0.8);
+            border-color: rgba(255, 69, 58, 0.8);
+        }
+
+        button {
+            font-family: "Ubuntu", Arial;
+            font-weight: 400;
+            font-style: normal;
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: rgb(255, 186, 49);
+            color: black;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button:active {
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background-color: #9e9e9e;
+            cursor: not-allowed;
+        }
+        
+        #progressContainer {
+            display: none;
+            margin-top: -40px;
+            position: relative;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeInStars {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        #progressContainer svg {
+            margin: 0 auto;
+            display: block;
+            transform: rotate(-90deg);
+        }
+        
+        #progressContainer circle {
+            fill: none;
+            stroke-width: 10;
+            cx: 100;
+            cy: 100;
+            r: 80;
+        }
+
+        #progressContainer .bg {
+            stroke: rgba(59, 59, 59, 0.2);
+        }
+
+        #progressContainer .progress {
+            stroke: #32CD32;
+            stroke-dasharray: 502;
+            stroke-dashoffset: 502;
+            transition: stroke-dashoffset 1s linear;
+        }
+
+        #progressText {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        #result {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            margin-top: 10vh;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Kviz -->
+    <canvas></canvas>
+    <div id="questions">
+        <div class="question active" data-correct="1">
+            <div class="question-number">Pitanje 1/10</div>
+            <p>Koja je poznata teorija o nastanku svemira?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Teorija velikog praska</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Teorija relativnosti</div>
+            </div>
+        </div>
+        <div class="question" data-correct="2">
+            <div class="question-number">Pitanje 2/10</div>
+            <p>Kako se zove naš galaktički dom?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Mliječna staza</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Andromeda</div>
+            </div>
+        </div>
+        <div class="question" data-correct="3">
+            <div class="question-number">Pitanje 3/10</div>
+            <p>Koja je zvijezda najbliža Zemlji?</p>
+            <div class="answers">
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Alpha Centauri</div>
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Sunce</div>
+            </div>
+        </div>
+        <div class="question" data-correct="4">
+            <div class="question-number">Pitanje 4/10</div>
+            <p>Koja planeta je poznata kao "Crvena planeta"?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Mars</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Jupiter</div>
+            </div>
+        </div>
+        <div class="question" data-correct="5">
+            <div class="question-number">Pitanje 5/10</div>
+            <p>Koja je najveća planeta u Sunčevom sustavu?</p>
+            <div class="answers">
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Saturn</div>
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Jupiter</div>
+            </div>
+        </div>
+        <div class="question" data-correct="6">
+            <div class="question-number">Pitanje 6/10</div>
+            <p>Koja je najbrža planeta u Sunčevom sustavu?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Merkur</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Mars</div>
+            </div>
+        </div>
+        <div class="question" data-correct="7">
+            <div class="question-number">Pitanje 7/10</div>
+            <p>Koja je brzina svjetlosti?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">300.000 km/s</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">150.000 km/s</div>
+            </div>
+        </div>
+        <div class="question" data-correct="8">
+            <div class="question-number">Pitanje 8/10</div>
+            <p>Koji je najbliži planet Suncu?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Merkur</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Venera</div>
+            </div>
+        </div>
+        <div class="question" data-correct="9">
+            <div class="question-number">Pitanje 9/10</div>
+            <p>Koja je najbliža zvijezda našem Sunčevom sustavu?</p>
+            <div class="answers">
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Alpha Centauri</div>
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Proxima Centauri</div>
+            </div>
+        </div>
+        <div class="question" data-correct="10">
+            <div class="question-number">Pitanje 10/10</div>
+            <p>Koja je najmanja planeta u Sunčevom sustavu?</p>
+            <div class="answers">
+                <div class="answer" data-correct="false" onclick="evaluateAnswer(this)">Mars</div>
+                <div class="answer" data-correct="true" onclick="evaluateAnswer(this)">Merkur</div>
+            </div>
+        </div>
+    </div>
+    <button id="next-button" onclick="nextQuestion()" disabled>Sljedeće</button>
+
+    <!-- Rezultat --> 
+    <div id="progressContainer" class="result-container">
+        <h1>Vaš rezultat</h1>
+        <svg width="200" height="200">
+            <circle class="bg" cx="100" cy="100" r="80"></circle>
+            <circle class="progress" cx="100" cy="100" r="80"></circle>
+        </svg>
+        <div id="progressText">0%</div>
+        <div id="result"></div>
+        <button onclick="returnToIndex()">Početna stranica</button>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let correctCount = 0;
+        const questions = document.querySelectorAll('.question');
+        const nextButton = document.getElementById('next-button');
+
+        // Zvijezde
+        const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+ 
+        const stars = Array.from({ length: 100 }, () => ({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 1.5 + 0.5,
+            speed: Math.random() * 0.2 + 0.05
+        }));
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+            requestAnimationFrame(drawStars);
+        }
+        drawStars();
+
+        // Pitanja
+        function evaluateAnswer(selected) {
+            const isCorrect = selected.getAttribute('data-correct') === 'true';
+            const answers = selected.parentElement.querySelectorAll('.answer');
+
+            answers.forEach(answer => {
+                if (answer.getAttribute('data-correct') === 'true') {
+                    answer.classList.add('correct');
+                } else if (answer === selected) {
+                    answer.classList.add('incorrect');
+                }
+            });
+
+            if (isCorrect) correctCount++;
+
+            selected.parentElement.parentElement.setAttribute('data-answered', true);
+            nextButton.disabled = false;
+        }
+
+        function nextQuestion() {
+            questions[currentQuestionIndex].classList.remove('active');
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                questions[currentQuestionIndex].classList.add('active');
+                nextButton.disabled = true;
+            } else {
+                showResults();
+            }
+        }
+
+        // Rezultat
+        function showResults() {
+            const totalQuestions = questions.length;
+            const percentage = Math.floor((correctCount / totalQuestions) * 100);
+
+            document.getElementById('questions').style.display = 'none';
+            nextButton.style.display = 'none';
+
+            const progressCircle = document.querySelector('.progress');
+            const progressText = document.getElementById('progressText');
+
+            const offset = 502 - (502 * percentage) / 100;
+            progressCircle.style.strokeDashoffset = offset;
+            progressText.textContent = `${percentage}%`;
+
+            const resultText = document.getElementById('result');
+            resultText.textContent = `Točnih odgovora: ${correctCount} od ${totalQuestions}`;
+
+            document.getElementById('progressContainer').style.display = 'flex';
+
+            function returnToIndex() {
+            window.location.href = 'index.html';
+            }
+        }
+        
+        function returnToIndex() {
+            const body = document.body;
+            body.style.transition = 'opacity 1s';
+            body.style.opacity = '0';
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
